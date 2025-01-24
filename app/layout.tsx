@@ -20,12 +20,14 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
             >
                 <div className={"flex"}>
                     <Link href={"/"} prefetch={true}>
-                        <ElevenLabsLogo
+                        {/* <ElevenLabsLogo
                             className={"h-[15px] w-auto hover:text-gray-500"}
-                        />
+                        /> */}
+                       {/* <img src="./logo.png" width="100px" height="40px"/> */}
+                       <p className="text-[24px] font-[700]">SARAHAI</p>
                     </Link>
                 </div>
-
+{/* 
                 <div className={"flex gap-4 justify-end"}>
                     <Link
                         href="https://github.com/jonatanvm/convai-demo"
@@ -37,8 +39,8 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
                         <GithubLogo
                             className={"w-5 h-5 hover:text-gray-500 text-[#24292f]"}
                         />
-                    </Link>
-                </div>
+                    </Link> */}
+                {/* </div> */}
             </nav>
             {children}
             <BackgroundWave/>
