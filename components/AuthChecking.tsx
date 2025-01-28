@@ -12,7 +12,7 @@ const withAuth = (WrappedComponent:any) => {
 
             // If no token, redirect to login or show the login form
             if (!token) {
-                return <LoginForm />;
+                return <LoginForm type={'login'} />;
                 // Alternatively, redirect the user:
                 // router.push('/login');
                 // return null;

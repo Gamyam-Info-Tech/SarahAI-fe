@@ -2,7 +2,7 @@ import type {Metadata} from "next";
 import "./globals.css";
 import {BackgroundWave} from "@/components/background-wave";
 import Link from "next/link";
-import {ElevenLabsLogo, GithubLogo} from "@/components/logos";
+import Connect from "@/components/Connect";
 
 export const metadata: Metadata = {
     title: "ConvAI",
@@ -12,35 +12,18 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
     return (
         <html lang="en" className={"h-full w-full"}>
         <body className={`antialiased w-full h-full lex flex-col`}>
-        <div className="flex flex-col flex-grow w-full items-center justify-center sm:px-4">
+        <div className="flex flex-col flex-grow w-full items-center justify-center sm:px-4 ">
             <nav
                 className={
-                    "sm:fixed w-full top-0 left-0 grid grid-cols-2 py-4 px-8"
+                    "sm:fixed w-full top-0 left-0 py-4 px-8"
                 }
             >
-                <div className={"flex"}>
+                <div className={"flex justify-between w-[100%]  "}>
                     <Link href={"/"} prefetch={true}>
-                        {/* <ElevenLabsLogo
-                            className={"h-[15px] w-auto hover:text-gray-500"}
-                        /> */}
-                       {/* <img src="./logo.png" width="100px" height="40px"/> */}
                        <p className="text-[24px] font-[700]">SARAHAI</p>
                     </Link>
+              <Connect/>
                 </div>
-{/* 
-                <div className={"flex gap-4 justify-end"}>
-                    <Link
-                        href="https://github.com/jonatanvm/convai-demo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={"py-0.5"}
-                        aria-label="View source on GitHub"
-                    >
-                        <GithubLogo
-                            className={"w-5 h-5 hover:text-gray-500 text-[#24292f]"}
-                        />
-                    </Link> */}
-                {/* </div> */}
             </nav>
             {children}
             <BackgroundWave/>

@@ -1,15 +1,13 @@
-"use client";
-import { motion } from "framer-motion";
-
 export const BackgroundWave = () => {
   return (
-    <motion.video
-      src="/wave-loop.mp4"
-      autoPlay
-      muted
-      loop
-      controls={false}
-      className="fixed grayscale object-cover bottom-0 z-[-1] hidden md:block pointer-events-none opacity-75 "
+    <div
+      style={{
+        backgroundImage: "url('/Websitebackground-BW.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        top: "74px", // Start after navbar
+      }}
+      className="fixed bottom-0 w-full h-[calc(100%-64px)] z-[-1] grayscale pointer-events-none"
     />
   );
 };
