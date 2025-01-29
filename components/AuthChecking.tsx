@@ -38,7 +38,6 @@ const withAuth = (WrappedComponent: any) => {
             return null; // or return a loading spinner/skeleton
         }
 
-        
         const token = window.localStorage.getItem('sara_token');
 
         if (!token) {
