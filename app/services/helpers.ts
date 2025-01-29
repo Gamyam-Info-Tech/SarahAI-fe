@@ -22,7 +22,7 @@ export const apiGetService = async (uri:string, params:any) => {
   if (queryString) {
     url = `${url}?${queryString}`;
   }
-  try {
+  try { 1
     const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       const error = await response.json();

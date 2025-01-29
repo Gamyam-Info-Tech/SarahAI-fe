@@ -19,6 +19,7 @@ const withAuth = (WrappedComponent:any) => {
             }
         
 
+            
         // If authenticated, render the wrapped component
         return <WrappedComponent {...props} />;
     };
