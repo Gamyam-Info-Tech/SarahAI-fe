@@ -1,4 +1,3 @@
-import {ConvAI} from "@/components/ConvAI";
 import LoginForm from "@/components/LoginForm";
 
 export default function Home() {

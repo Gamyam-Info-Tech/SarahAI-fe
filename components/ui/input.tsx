@@ -2,7 +2,7 @@
 import React from 'react';
 import { Controller } from 'react-hook-form';
 
-const GlobalInput = ({ name, label, rules, control, className, errors, defaultValue = '', onChange, type, ...props }:any,ref) => {
+const GlobalInput = ({ name, label, rules, control, className, errors, defaultValue = '', onChange, type, ...props }:any,ref:any) => {
     const inputId = `input-${name}`;
     return (
         control && (

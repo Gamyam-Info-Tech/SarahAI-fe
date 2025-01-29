@@ -1,28 +1,55 @@
-"use client"
-import React from 'react'; // For redirection in Next.js
-import LoginForm from './LoginForm'; // Replace with your LoginForm component
+// "use client";
+// import React from 'react';
+// import LoginForm from './LoginForm';
 
-const withAuth = (WrappedComponent:any) => {
-    return (props:any) => {
-        // const router = useRouter();
+// const withAuth = (WrappedComponent: any) => {
+//     const AuthComponent = (props: any) => {
+//         const token = localStorage?.getItem('sara_token');
 
-        // Check if the code is running in the browser (important for SSR)
-      
-            const token = localStorage.getItem('sara_token');
+//         if (!token) {
+//             return <LoginForm type={'login'} />;
+//         }
 
-            // If no token, redirect to login or show the login form
-            if (!token) {
-                return <LoginForm type={'login'} />;
-                // Alternatively, redirect the user:
-                // router.push('/login');
-                // return null;
-            }
-        
+//         return <WrappedComponent {...props} />;
+//     };
 
-            
-        // If authenticated, render the wrapped component
+//     // Assign display name for debugging
+//     AuthComponent.displayName = `WithAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+
+//     return AuthComponent;
+// };
+
+// export default withAuth;
+
+
+"use client";
+import React, { useEffect, useState } from 'react';
+import LoginForm from './LoginForm';
+
+const withAuth = (WrappedComponent: any) => {
+    const AuthComponent = (props: any) => {
+        const [isClient, setIsClient] = useState(false);
+
+        useEffect(() => {
+            setIsClient(true);
+        }, []);
+
+        if (!isClient) {
+            return null; // or return a loading spinner/skeleton
+        }
+
+        const token = window.localStorage.getItem('sara_token');
+
+        if (!token) {
+            return <LoginForm type={'login'} />;
+        }
+
         return <WrappedComponent {...props} />;
     };
+
+    AuthComponent.displayName = `WithAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+
+    return AuthComponent;
 };
 
 export default withAuth;

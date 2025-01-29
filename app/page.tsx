@@ -15,9 +15,11 @@
 
 
 "use client"
+
+import ConvAI from "@/components/ConvAI";
+import dynamic from 'next/dynamic'
 import withAuth from "@/components/AuthChecking";
-import Connect from "@/components/Connect";
-import {ConvAI} from "@/components/ConvAI";
+
 
 function Home() {
     return (

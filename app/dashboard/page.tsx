@@ -1,6 +1,6 @@
 "use client"
 import withAuth from "@/components/AuthChecking";
-import {ConvAI} from "@/components/ConvAI";
+import ConvAI from "@/components/ConvAI";
 
 function Home() {
     return (

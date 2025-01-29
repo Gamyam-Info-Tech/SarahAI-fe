@@ -119,8 +119,8 @@ const LoginForm = ({ type }: LoginFormProps) => {
                 </Button>
               </div>
               {type === "register" ?
-                <p className="text-center">Already have an account <Link href="/login"><span className="text-[#797a83]">Login</span></Link> </p> :
-                <p className="text-center">Don't have an account <Link href="/register"><span className="text-[#797a83]">Register</span> </Link></p>}
+                <p className="text-center">Already have an account <Link href="/login"><span className="text-[#797a83]">Login</span></Link> </p>:
+                <p className="text-center">{"Don't have an account"}<Link href="/register"><span className="text-[#797a83]">Register</span> </Link></p>}
             </div>
           </CardHeader>
         </CardContent>

@@ -6,10 +6,6 @@ export const API_URL = process.env.NODE_ENV === 'production'
 // Types
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-}
 
 interface RequestOptions {
   method: HttpMethod;

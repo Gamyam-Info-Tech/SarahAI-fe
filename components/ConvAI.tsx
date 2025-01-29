@@ -26,7 +26,7 @@ async function getSignedUrl(): Promise<string> {
     return data.signedUrl
 }
 
-export function ConvAI() {
+ function ConvAI() {
     const [conversation, setConversation] = useState<Conversation | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState(false)
@@ -111,3 +111,4 @@ export function ConvAI() {
         </div>
     )
 }
+export default ConvAI

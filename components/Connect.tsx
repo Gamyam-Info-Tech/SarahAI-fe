@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "./ui/button";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,Suspense } from 'react';
 import { connectionUser, codeexchange } from '../app/services/users';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -9,7 +9,17 @@ interface ConnectionData {
   grant_id: string;
 }
 
-const Connect = () => {
+// Add interfaces for API responses
+interface ConnectionResponse {
+  auth_url: string;
+}
+
+interface CodeExchangeResponse {
+  provider: string;
+  grant_id: string;
+}
+
+const ConnectContent = () => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<any>(null);
@@ -17,13 +27,14 @@ const Connect = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Move localStorage operations to useEffect
   useEffect(() => {
-    // Check for token
     const storedToken = window.localStorage.getItem("sara_token");
+    if (!storedToken) {
+      router.push("/login");
+      return;
+    }
     setToken(storedToken);
 
-    // Check for connection data
     const storedConnection = window.localStorage.getItem('connectionData');
     if (storedConnection) {
       try {
@@ -33,21 +44,21 @@ const Connect = () => {
         console.error('Error parsing connection data:', error);
       }
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const code = searchParams.get('code');
-    if (code) {
+    if (code && token) {
       handleCodeExchange(code);
     }
-  }, [searchParams]);
+  }, [searchParams, token]);
 
   const handleCodeExchange = async (code: string) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await codeexchange({ code });
+      const response = await codeexchange({ code }) as CodeExchangeResponse;
       
       if (response?.grant_id && response?.provider) {
         const connectionData: ConnectionData = {
@@ -85,7 +96,7 @@ const Connect = () => {
     setError(null);
     
     try {
-      const response = await connectionUser();
+      const response = await connectionUser() as ConnectionResponse;
       
       if (response?.auth_url) {
         window.location.href = response.auth_url;
@@ -98,13 +109,10 @@ const Connect = () => {
     }
   };
 
-  const handleDisconnect = () => {
-    window.localStorage.removeItem('connectionData');
-    setConnectedProvider(null);
-  };
-
   const handleLogout = () => {
     window.localStorage.clear();
+    setToken(null);
+    setConnectedProvider(null);
     router.push("/login");
   };
 
@@ -133,23 +141,27 @@ const Connect = () => {
         {getButtonText()}
       </Button>
       
-      {connectedProvider && (
-        <Button 
-          onClick={handleDisconnect}
-          variant="outline"
-          className="ml-2"
-        >
-          Disconnect
-        </Button>
-      )}
-      
       {error && (
         <p className="text-red-500 text-sm">
           {error}
         </p>
       )}
     </div>
+    
+  );
+};
+
+const Connect = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center gap-4">
+        <Button variant="outline" disabled>Loading...</Button>
+      </div>
+    }>
+      <ConnectContent />
+    </Suspense>
   );
 };
 
 export default Connect;
+// export default Connect;
