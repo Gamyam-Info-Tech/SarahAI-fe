@@ -12,7 +12,7 @@ interface ConnectionData {
 const Connect = () => {
   const token=localStorage.getItem("sara_token")
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const [connectedProvider, setConnectedProvider] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();

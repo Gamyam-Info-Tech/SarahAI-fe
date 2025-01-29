@@ -2,7 +2,7 @@
 export const Apiurl = "http://172.16.4.129:8000";
 
 
-const getHeaders = () => {
+const getHeaders:any = () => {
   const token=localStorage.getItem("sara_token")
   if(token){
   return {
@@ -83,7 +83,7 @@ export const apiPostService = async (
   }
 };
 
-export const apiPutService = async (uri, jsonPayload) => {
+export const apiPutService = async (uri:any, jsonPayload:any) => {
   try {
     const response = await fetch(`${Apiurl}${uri}`, {
       method: "PUT",
@@ -101,7 +101,7 @@ export const apiPutService = async (uri, jsonPayload) => {
   }
 };
 
-export const apiPatchService = async (uri, jsonPayload) => {
+export const apiPatchService = async (uri:any, jsonPayload:any) => {
   try {
     const response = await fetch(`${Apiurl}${uri}`, {
       method: "PATCH",
@@ -119,7 +119,7 @@ export const apiPatchService = async (uri, jsonPayload) => {
   }
 };
 
-export const apiDeleteService = async (uri) => {
+export const apiDeleteService = async (uri:any) => {
   try {
     const response = await fetch(`${Apiurl}${uri}`, {
       method: "DELETE",
