@@ -9,7 +9,7 @@ export const registerUser=async(data:any)=>{
     return await apiPostService('/users/register/',data);
 
 }
-export const connectionUser=async(data:any)=>{
+export const connectionUser=async(data?:any)=>{
     return await apiGetService('/nylas/auth_url/',data || {});
 }
 export const codeexchange=async(data:any)=>{

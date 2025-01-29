@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import "./globals.css";
 import {BackgroundWave} from "@/components/background-wave";
 import Link from "next/link";
+import Image from "next/image"; // Add this import
 import Connect from "@/components/Connect";
 
 export const metadata: Metadata = {
@@ -20,9 +21,16 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
             >
                 <div className={"flex justify-between w-[100%]  "}>
                     <Link href={"/"} prefetch={true}>
-                       <p className="text-[24px] font-[700]">SARAHAI</p>
+                        <Image
+                            src="/logo.png"
+                            alt="SARAHAI Logo"
+                            width={120}  
+                            height={40}  
+                            className="object-contain"
+                            
+                        />
                     </Link>
-              <Connect/>
+                    <Connect/>
                 </div>
             </nav>
             {children}
