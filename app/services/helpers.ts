@@ -1,138 +1,130 @@
-// export const Apiurl = "http://216.48.179.15:8000";
-export const Apiurl = "http://172.16.4.129:8000";
+// Constants
+export const API_URL = process.env.NODE_ENV === 'production' 
+  ? "http://216.48.179.15:8000"
+  : "http://localhost:8000";
 
+// Types
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-const getHeaders = () => {
-  const token=localStorage.getItem("sara_token")
-  if(token){
-  return {
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+interface RequestOptions {
+  method: HttpMethod;
+  headers: HeadersInit;
+  body?: string;
+}
+
+// Helper functions
+const getAuthToken = (): string | null => {
+  return localStorage.getItem("sara_token");
+};
+
+const getHeaders = (): HeadersInit => {
+  const headers: HeadersInit = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("sara_token")}`,
-  };}else{
-    return {
-      "Content-Type": "application/json",
-   
+  };
+
+  const token = getAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
+const handleApiError = async (response: Response): Promise<never> => {
+  try {
+    const errorData = await response.json();
+    let errorMessage: string;
+
+    if (typeof errorData === 'object') {
+      errorMessage = Object.values(errorData).flat().join(', ');
+    } else {
+      errorMessage = errorData as string;
     }
+
+    throw new Error(errorMessage || 'An error occurred');
+  } catch (error) {
+    throw new Error('An unexpected error occurred');
   }
 };
 
-export const apiGetService = async (uri:string, params:any) => {
-  const queryString = new URLSearchParams(params).toString();
-  let url = `${Apiurl}${uri}`;
-  if (queryString) {
-    url = `${url}?${queryString}`;
+const createUrl = (uri: string, params?: Record<string, any>): string => {
+  let url = `${API_URL}${uri}`;
+  if (params) {
+    const queryString = new URLSearchParams(params).toString();
+    url = queryString ? `${url}?${queryString}` : url;
   }
+  return url;
+};
+
+// Generic API request function
+async function apiRequest<T>(
+  uri: string,
+  method: HttpMethod,
+  payload?: any,
+  params?: Record<string, any>
+): Promise<T> {
+  const url = createUrl(uri, params);
+  const options: RequestOptions = {
+    method,
+    headers: getHeaders(),
+  };
+
+  if (payload) {
+    options.body = JSON.stringify(payload);
+  }
+
   try {
-    const response = await fetch(url, { headers: getHeaders() });
+    const response = await fetch(url, options);
+
     if (!response.ok) {
-      const error = await response.json();
-      const errorMessage = Object.values(error).flat().join(", ");
-      throw new Error(errorMessage || "An error occurred");
+      await handleApiError(response);
     }
+
+    // Handle CSV response
     const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('text/csv')) {
-      return await response.blob();
+    if (contentType?.includes('text/csv')) {
+      return response.blob() as unknown as T;
     }
-    
-    return await response.json();
+
+    return response.json();
   } catch (error) {
+    console.error(`API ${method} Error:`, error);
     throw error;
   }
-};
+}
 
+// Exported service functions
+export async function apiGetService<T>(uri: string, params?: Record<string, any>): Promise<T> {
+  return apiRequest<T>(uri, 'GET', undefined, params);
+}
 
+export async function apiPostService<T>(
+  uri: string,
+  payload: Record<string, any> = {}
+): Promise<T> {
+  return apiRequest<T>(uri, 'POST', payload);
+}
 
-export const apiPostService = async (
-  uri = "",
-  payload = {},
-  responseType = "json",
- 
-) => {
-  try {
-    const response = await fetch(`${Apiurl}${uri}`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(payload),
-    });
+export async function apiPutService<T>(
+  uri: string,
+  payload: Record<string, any>
+): Promise<T> {
+  return apiRequest<T>(uri, 'PUT', payload);
+}
 
-    // if (!response.ok) {
-    //     const error = await response.json();
-        if (!response.ok) {
-            const resError = await response.json();
-            let jsonError=""
-            if(typeof(resError)==="object"){
-              console.log("resError","hello",resError)
-              jsonError= JSON.stringify(resError)
-            }else{
-              jsonError=resError
-            }
-            if (jsonError) {
-              throw new Error(jsonError);
-            }
-          }
-    //   throw new Error(error);
-    // }
+export async function apiPatchService<T>(
+  uri: string,
+  payload: Record<string, any>
+): Promise<T> {
+  return apiRequest<T>(uri, 'PATCH', payload);
+}
 
-    // Handle the response based on the specified responseType
-  
-      return await response.json();
-    
-  } catch (error) {
-    console.log("API Post Service Error:", error);
-    throw error;
-  }
-};
-
-export const apiPutService = async (uri, jsonPayload) => {
-  try {
-    const response = await fetch(`${Apiurl}${uri}`, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(jsonPayload),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      const errorMessage = Object.values(error).flat().join(", ");
-      throw new Error(errorMessage || "An error occurred");
-    }
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const apiPatchService = async (uri, jsonPayload) => {
-  try {
-    const response = await fetch(`${Apiurl}${uri}`, {
-      method: "PATCH",
-      headers: getHeaders(),
-      body: JSON.stringify(jsonPayload),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      const errorMessage = Object.values(error).flat().join(", ");
-      throw new Error(errorMessage || "An error occurred");
-    }
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const apiDeleteService = async (uri) => {
-  try {
-    const response = await fetch(`${Apiurl}${uri}`, {
-      method: "DELETE",
-      headers: getHeaders(),
-    });
-    // if (!response.ok) {
-    //    const error= await response.json();
-    //    const errorMessage = Object.values(error).flat().join(', ');
-    //    throw new Error('An error occurred');
-    // }
-    // return await response.json();
-    return true;
-  } catch (error) {
-    throw error;
-  }
-};
+export async function apiDeleteService(uri: string): Promise<boolean> {
+  await apiRequest(uri, 'DELETE');
+  return true;
+}

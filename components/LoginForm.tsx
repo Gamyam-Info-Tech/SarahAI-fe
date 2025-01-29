@@ -1,5 +1,5 @@
 "use client"
-import React, { useState,useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { useForm } from 'react-hook-form'
 import GlobalInput from './ui/input'
@@ -29,6 +29,18 @@ const LoginForm = ({ type }: LoginFormProps) => {
   const { control, formState: { errors }, reset } = methods
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [hasToken, setHasToken] = useState(false)
+
+  // Safe localStorage check
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('sara_token')
+      if (token) {
+        setHasToken(true)
+        router.push('/')
+      }
+    }
+  }, [router])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -39,9 +51,11 @@ const LoginForm = ({ type }: LoginFormProps) => {
       } else {
         const response = await login(data) as LoginResponse
         if (response.tokens?.access) {
-          localStorage.setItem("sara_token", response?.tokens?.access)
-          router.push('/')
-          window.location.reload()
+          if (typeof window !== 'undefined') {
+            localStorage.setItem("sara_token", response.tokens.access)
+            router.push('/')
+            window.location.reload()
+          }
         }
       }
       reset()
@@ -56,15 +70,11 @@ const LoginForm = ({ type }: LoginFormProps) => {
     setLoading(false)
   }
 
-  const token = localStorage.getItem('sara_token');
-
-useEffect(() => {
-  if (token) {
-    router.push('/');
+  // Prevent flash of login form if user is already logged in
+  if (hasToken) {
+    return null
   }
-}, [token, router]);
 
- 
   return (
     <div className={"flex justify-center items-center w-[100%] h-[100vh] px-[40px] md:px-[0px] "}>
       <Card className={'rounded-3xl w-[100%] md:w-[400px] '}>
