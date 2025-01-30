@@ -26,8 +26,7 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
                             alt="SARAHAI Logo"
                             width={120}  
                             height={40}  
-                            className="object-contain"
-                            
+                            className="object-contain"                           
                         />
                     </Link>
                     <Connect/>

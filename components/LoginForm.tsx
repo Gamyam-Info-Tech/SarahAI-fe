@@ -18,6 +18,7 @@ interface FormData {
 }
 
 interface LoginResponse {
+  user: any
   tokens?: {
     access: string
   }
@@ -52,7 +53,9 @@ const LoginForm = ({ type }: LoginFormProps) => {
         const response = await login(data) as LoginResponse
         if (response.tokens?.access) {
           if (typeof window !== 'undefined') {
+            console.log(response)
             localStorage.setItem("sara_token", response.tokens.access)
+            localStorage.setItem("id", response.user.id)
             router.push('/')
             window.location.reload()
           }

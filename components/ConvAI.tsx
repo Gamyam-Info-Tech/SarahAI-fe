@@ -1,11 +1,12 @@
 "use client"
 
 import {Button} from "@/components/ui/button";
-import * as React from "react";
+import React,{useEffect} from "react";
 import {useState} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Conversation} from "@11labs/client";
 import {cn} from "@/lib/utils";
+import { getHistory, getHistoryId, sessionId } from "@/app/services/users";
 
 async function requestMicrophonePermission() {
     try {
@@ -30,14 +31,28 @@ async function getSignedUrl(): Promise<string> {
     const [conversation, setConversation] = useState<Conversation | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState(false)
-
+    const fetchHistoryId=async()=>{
+        try{
+        const ids:any= await getHistoryId()
+        console.log(ids,"ids")
+        await getHistory(ids?.[0]?.session_id)
+        }catch(err){
+            console.log(err)
+        }
+    }
+    useEffect(()=>{
+        fetchHistoryId()
+    },[])
     async function startConversation() {
+      
         const hasPermission = await requestMicrophonePermission()
         if (!hasPermission) {
             alert("No permission")
             return;
         }
         const signedUrl = await getSignedUrl()
+        console.log(signedUrl,"signedUrl")
+        // await sessionId({session_id:})
         const conversation = await Conversation.startSession({
             signedUrl: signedUrl,
             onConnect: () => {
@@ -56,7 +71,10 @@ async function getSignedUrl(): Promise<string> {
                 setIsSpeaking(mode === 'speaking')
             },
         })
+        const id = conversation.getId();
+      
         setConversation(conversation)
+      await sessionId({session_id:id})
     }
 
     async function endConversation() {

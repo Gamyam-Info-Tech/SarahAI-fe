@@ -58,7 +58,15 @@ const ConnectContent = () => {
     setError(null);
     
     try {
-      const response = await codeexchange({ code }) as CodeExchangeResponse;
+      const userId = window.localStorage.getItem("id");
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
+      const response = await codeexchange({ 
+        code,
+        id: userId 
+      }) as CodeExchangeResponse;
       
       if (response?.grant_id && response?.provider) {
         const connectionData: ConnectionData = {
