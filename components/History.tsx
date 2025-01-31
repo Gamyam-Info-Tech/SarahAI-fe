@@ -133,31 +133,27 @@ const ConversationHistory = () => {
   }
 
   return (
-    <div className="w-full bg-white p-6 rounded-lg">
-      <h2 className="text-2xl font-semibold mb-8 text-center">Conversation History</h2>
-      <div className="space-y-2">
+    <div className="max-w-4xl mx-auto w-full px-4 sm:px-6">
+      <h2 className="text-2xl font-semibold mb-6 text-center">Conversation History</h2>
+      <div className="space-y-3">
         {sessions.map((session) => (
           <div 
             key={session.session_id} 
-            className="bg-white shadow-sm border rounded-lg overflow-hidden"
+            className="bg-white border rounded-lg overflow-hidden"
           >
-            <div 
-              className="p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50"
+            <button 
+              className="w-full p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 text-left"
               onClick={() => handleSessionClick(session.session_id)}
             >
-              <div className="text-gray-600">
-                <div className="text-sm">
-                  {formatDateTime(session.created_at).formattedDate}
-                  <span className="ml-4">
-                    {formatDateTime(session.created_at).formattedTime}
-                  </span>
-                </div>
+              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <span>{formatDateTime(session.created_at).formattedDate}</span>
+                <span>{formatDateTime(session.created_at).formattedTime}</span>
               </div>
               {expandedSession === session.session_id ? 
-                <ChevronUp className="h-5 w-5 text-gray-400" /> : 
-                <ChevronDown className="h-5 w-5 text-gray-400" />
+                <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" /> : 
+                <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
               }
-            </div>
+            </button>
             
             {expandedSession === session.session_id && (
               <div className="border-t">
