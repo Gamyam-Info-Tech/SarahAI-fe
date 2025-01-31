@@ -120,7 +120,7 @@ const ConnectContent = () => {
   const handleLogout = () => {
     window.localStorage.clear();
     setToken(null);
-    setConnectedProvider(null);
+    // setConnectedProvider(null);
     router.push("/login");
   };
 

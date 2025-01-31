@@ -1,7 +1,7 @@
 // Constants
 export const API_URL = process.env.NODE_ENV === 'production' 
   ? "http://216.48.179.15:8000"
-  : "http://172.16.4.129:8000";
+  : "http://192.168.31.34:8000";
 
 // Types
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -14,21 +14,25 @@ interface RequestOptions {
 }
 
 // Helper functions
-const getAuthToken = (): string | null => {
-  return localStorage.getItem("sara_token");
+const getAuthToken = (bot_token=false): string | null => {
+  const token=localStorage.getItem("sara_token")
+  if(token){
+   return bot_token?"Bot ZmlaXnksCbjdVhgf_8": `Bearer ${localStorage.getItem("sara_token")}`;
+  }
+  return null
+  
 };
 
-const getHeaders = (): HeadersInit => {
+const getHeaders = (bot_token=false): HeadersInit => {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
 
-  const token = getAuthToken();
+  const token = getAuthToken(bot_token);
   if (token) {
-    const req="Bot ZmlaXnksCbjdVhgf_8"
-    headers.Authorization = `${req}`;
+    // const req="Bot ZmlaXnksCbjdVhgf_8"
+    headers.Authorization = `${token}`;
   }
-
   return headers;
 };
 
@@ -63,12 +67,13 @@ async function apiRequest<T>(
   uri: string,
   method: HttpMethod,
   payload?: any,
-  params?: Record<string, any>
+  params?: Record<string, any>,
+  bot_token=false
 ): Promise<T> {
   const url = createUrl(uri, params);
   const options: RequestOptions = {
     method,
-    headers: getHeaders(),
+    headers: getHeaders(bot_token),
   };
 
   if (payload) {
@@ -96,15 +101,16 @@ async function apiRequest<T>(
 }
 
 // Exported service functions
-export async function apiGetService<T>(uri: string, params?: Record<string, any>): Promise<T> {
-  return apiRequest<T>(uri, 'GET', undefined, params);
+export async function apiGetService<T>(uri: string, params?: Record<string, any>, bot_token=false): Promise<T> {
+  return apiRequest<T>(uri, 'GET', undefined, params,bot_token);
 }
 
 export async function apiPostService<T>(
   uri: string,
-  payload: Record<string, any> = {}
+  payload: Record<string, any> = {},
+  bot_token=false
 ): Promise<T> {
-  return apiRequest<T>(uri, 'POST', payload);
+  return apiRequest<T>(uri, 'POST', payload,undefined,bot_token);
 }
 
 export async function apiPutService<T>(

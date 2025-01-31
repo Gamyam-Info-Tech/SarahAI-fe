@@ -1,5 +1,5 @@
 import { apiGetService, apiPostService } from "./helpers";
-export const Apiurl = "http://172.16.4.129:8000/";
+export const Apiurl = "http://192.168.31.34:8000/";
 
 interface CodeExchangeData {
     code: string;
@@ -15,11 +15,11 @@ export const registerUser = async(data: any) => {
 }
 
 export const connectionUser = async(data?: any) => {
-    return await apiGetService('/nylas/auth_url/', data || {});
+    return await apiGetService('/nylas/auth_url/', data || {},true);
 }
 
 export const codeexchange = async(data: CodeExchangeData) => {
-    return await apiPostService('/nylas/exchange_token/', data);
+    return await apiPostService('/nylas/exchange_token/', data,true);
 }
 
 export const historyUser = async(data: any) => {
@@ -40,7 +40,7 @@ export const getHistory = async(id: any) => {
     
     try {
         const response = await fetch(
-            `https://api.elevenlabs.io/v1/convai/history/${id}`,
+            `https://api.elevenlabs.io/v1/convai/conversations/${id}`,
             {
                 method: 'GET',
                 headers: {
