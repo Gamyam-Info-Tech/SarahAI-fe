@@ -1,5 +1,5 @@
 import { apiGetService, apiPostService } from "./helpers";
-export const Apiurl = "http://192.168.31.34:8000/";
+export const Apiurl = process.env.NEXT_PUBLIC_BE_API_URL
 
 interface CodeExchangeData {
     code: string;

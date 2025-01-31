@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_BE_API_URL
+
 const getHistoryId = async () => {
-  const response = await fetch('http://192.168.31.34:8000/sessions/', {
+  const response = await fetch(`${API_URL}/sessions/`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

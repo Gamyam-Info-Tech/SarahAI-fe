@@ -1,8 +1,6 @@
 // Constants
-export const API_URL = process.env.NODE_ENV === 'production' 
-  ? "http://216.48.179.15:8000"
-  : "http://192.168.31.34:8000";
-
+export const API_URL = process.env.NEXT_PUBLIC_BE_API_URL
+console.log(API_URL)
 // Types
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
