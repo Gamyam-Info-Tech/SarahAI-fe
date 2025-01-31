@@ -118,7 +118,7 @@ const ConnectContent = () => {
   };
 
   const handleLogout = () => {
-    window.localStorage.clear();
+    window.localStorage.removeItem("sara_token");
     setToken(null);
     // setConnectedProvider(null);
     router.push("/login");

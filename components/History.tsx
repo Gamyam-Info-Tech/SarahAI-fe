@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-// Define the API functions directly
 const getHistoryId = async () => {
   const response = await fetch('http://192.168.31.34:8000/sessions/', {
     method: 'GET',
@@ -20,7 +18,7 @@ const getHistoryId = async () => {
 };
 
 const getHistory = async (id: string) => {
-  const apiKey = "sk_b8272f9490709c083007957e563b8a08eaca08f2cc0ca043";
+  const apiKey = "sk_f663505088dd237906010c5d9007258bad539fac79f45a99";
   
   const response = await fetch(
     `https://api.elevenlabs.io/v1/convai/conversations/${id}`,
@@ -38,7 +36,6 @@ const getHistory = async (id: string) => {
 
   return response.json();
 };
-
 interface SessionData {
   user: number;
   session_id: string;
@@ -52,9 +49,6 @@ interface Transcript {
 
 interface ConversationData {
   transcript: Transcript[];
-  analysis: {
-    transcript_summary: string;
-  };
 }
 
 const ConversationHistory = () => {
@@ -106,8 +100,20 @@ const ConversationHistory = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    const formattedTime = date.toLocaleTimeString([], { 
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false 
+    });
+    return { formattedDate, formattedTime };
   };
 
   if (loading) {
@@ -127,63 +133,65 @@ const ConversationHistory = () => {
   }
 
   return (
-    <div className="w-full min-w-[100%] p-4 space-y-4">
-      <h2 className="text-2xl font-bold mb-6">Conversation History</h2>
-      
-      {sessions.map((session) => (
-        <Card key={session.session_id} className="w-full">
-          <CardHeader className="cursor-pointer" onClick={() => handleSessionClick(session.session_id)}>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">
-                Session: {session.session_id.slice(0, 8)}...
-              </CardTitle>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-500">
-                  {formatDate(session.created_at)}
-                </span>
-                {expandedSession === session.session_id ? 
-                  <ChevronUp className="h-5 w-5" /> : 
-                  <ChevronDown className="h-5 w-5" />
-                }
+    <div className="w-full bg-white p-6 rounded-lg">
+      <h2 className="text-2xl font-semibold mb-8 text-center">Conversation History</h2>
+      <div className="space-y-2">
+        {sessions.map((session) => (
+          <div 
+            key={session.session_id} 
+            className="bg-white shadow-sm border rounded-lg overflow-hidden"
+          >
+            <div 
+              className="p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50"
+              onClick={() => handleSessionClick(session.session_id)}
+            >
+              <div className="text-gray-600">
+                <div className="text-sm">
+                  {formatDateTime(session.created_at).formattedDate}
+                  <span className="ml-4">
+                    {formatDateTime(session.created_at).formattedTime}
+                  </span>
+                </div>
               </div>
+              {expandedSession === session.session_id ? 
+                <ChevronUp className="h-5 w-5 text-gray-400" /> : 
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+              }
             </div>
-          </CardHeader>
-          
-          {expandedSession === session.session_id && (
-            <CardContent className="border-t">
-              {conversations[session.session_id] ? (
-                <div className="space-y-4">
-                  {conversations[session.session_id].transcript.map((t, idx) => (
-                    <div key={idx} className={`p-3 rounded-lg ${
-                      t.role === 'agent' ? 'bg-blue-50' : 'bg-gray-50'
-                    }`}>
-                      <p className="font-semibold mb-1">{t.role === 'agent' ? 'Agent' : 'User'}</p>
-                      <p>{t.message}</p>
-                    </div>
-                  ))}
-                  
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="font-semibold">Summary:</p>
-                    <p className="text-gray-600">
-                      {conversations[session.session_id].analysis.transcript_summary}
-                    </p>
+            
+            {expandedSession === session.session_id && (
+              <div className="border-t">
+                {conversations[session.session_id] ? (
+                  <div className="p-4 space-y-3">
+                    {conversations[session.session_id].transcript.map((t, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`p-3 rounded-lg ${
+                          t.role === 'agent' 
+                            ? 'bg-blue-50 text-blue-800' 
+                            : 'bg-gray-50 text-gray-800'
+                        }`}
+                      >
+                        {t.message}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ) : (
-                <div className="py-4 text-center text-gray-500">
-                  Loading conversation...
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-      ))}
-      
-      {sessions.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          No conversations found
-        </div>
-      )}
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    Loading conversation...
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        
+        {sessions.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No conversations found
+          </div>
+        )}
+      </div>
     </div>
   );
 };

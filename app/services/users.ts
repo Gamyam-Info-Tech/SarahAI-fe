@@ -35,8 +35,8 @@ export const getHistoryId = async() => {
 }
 
 export const getHistory = async(id: any) => {
-    const apiKey: string = "sk_b8272f9490709c083007957e563b8a08eaca08f2cc0ca043";
-    const agentId = "yqPmLc937dY5QUdgudqw";
+    const apiKey: string = "sk_f663505088dd237906010c5d9007258bad539fac79f45a99";
+    const agentId = "FJVa4IrSWE78kdgdNjI1";
     
     try {
         const response = await fetch(

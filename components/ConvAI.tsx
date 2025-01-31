@@ -6,6 +6,8 @@ import {useState} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Conversation} from "@11labs/client";
 import {cn} from "@/lib/utils";
+import {AGENT_PROMPTS} from "@/lib/prompts";
+
 import { getHistory, getHistoryId, sessionId } from "@/app/services/users";
 
 async function requestMicrophonePermission() {
@@ -27,7 +29,7 @@ async function getSignedUrl(): Promise<string> {
     return data.signedUrl
 }
 
- function ConvAI() {
+export default function ConvAI() {
     const [conversation, setConversation] = useState<Conversation | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState(false)
@@ -50,11 +52,21 @@ async function getSignedUrl(): Promise<string> {
             alert("No permission")
             return;
         }
+        
+        const userId = localStorage.getItem("id")
         const signedUrl = await getSignedUrl()
         console.log(signedUrl,"signedUrl")
         // await sessionId({session_id:})
+        console.log(AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown'))
         const conversation = await Conversation.startSession({
             signedUrl: signedUrl,
+            overrides: {
+                agent: {
+                    prompt: {
+                        prompt: AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown')
+                    }
+                }
+            },
             onConnect: () => {
                 setIsConnected(true)
                 setIsSpeaking(true)
@@ -129,4 +141,3 @@ async function getSignedUrl(): Promise<string> {
         </div>
     )
 }
-export default ConvAI
