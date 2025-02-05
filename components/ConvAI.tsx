@@ -29,24 +29,40 @@ async function getSignedUrl(): Promise<string> {
     return data.signedUrl
 }
 
+function getTimeBasedGreeting() {
+    const hour = new Date().getHours();
+    const userName = localStorage.getItem("user_name") || "there";
+    const formattedName = userName.charAt(0).toUpperCase() + userName.slice(1);
+    
+    if (hour >= 5 && hour < 12) {
+        return `Good morning, ${formattedName}! Ready to tackle the day together? 😊`;
+    } else if (hour >= 12 && hour < 18) {
+        return `Hello ${formattedName}! Hope you're having a wonderful day. How can I help you? 😊`;
+    } else {
+        return `Hi ${formattedName}! Hope you had a great day! I'm here to help with anything you need! 😊`;
+    }
+}
+
 export default function ConvAI() {
     const [conversation, setConversation] = useState<Conversation | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState(false)
+
     const fetchHistoryId=async()=>{
         try{
-        const ids:any= await getHistoryId()
-        console.log(ids,"ids")
-        await getHistory(ids?.[0]?.session_id)
+            const ids:any= await getHistoryId()
+            console.log(ids,"ids")
+            await getHistory(ids?.[0]?.session_id)
         }catch(err){
             console.log(err)
         }
     }
+
     useEffect(()=>{
         fetchHistoryId()
     },[])
+
     async function startConversation() {
-      
         const hasPermission = await requestMicrophonePermission()
         if (!hasPermission) {
             alert("No permission")
@@ -56,12 +72,15 @@ export default function ConvAI() {
         const userId = localStorage.getItem("id")
         const signedUrl = await getSignedUrl()
         console.log(signedUrl,"signedUrl")
-        // await sessionId({session_id:})
-        console.log(AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown'))
+
+        const greeting = getTimeBasedGreeting();
+        console.log('Using greeting:', greeting);
+
         const conversation = await Conversation.startSession({
             signedUrl: signedUrl,
             overrides: {
                 agent: {
+                    firstMessage: greeting,
                     prompt: {
                         prompt: AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown')
                     }
@@ -84,9 +103,8 @@ export default function ConvAI() {
             },
         })
         const id = conversation.getId();
-      
         setConversation(conversation)
-      await sessionId({session_id:id})
+        await sessionId({session_id:id})
     }
 
     async function endConversation() {
@@ -95,6 +113,7 @@ export default function ConvAI() {
         }
         await conversation.endSession()
         setConversation(null)
+        window.location.reload()
     }
 
     return (
@@ -115,7 +134,6 @@ export default function ConvAI() {
                             isSpeaking ? 'animate-orb' : (conversation && 'animate-orb-slow'),
                             isConnected ? 'orb-active' : 'orb-inactive')}
                         ></div>
-
 
                         <Button
                             variant={'outline'}

@@ -52,6 +52,12 @@ const ConnectContent = () => {
       handleCodeExchange(code);
     }
   }, [searchParams, token]);
+  useEffect(()=>{
+    const provider:any=localStorage.getItem("provider")
+    if(provider){
+     setConnectedProvider(provider)
+    }
+  })
 
   const handleCodeExchange = async (code: string) => {
     setIsLoading(true);
@@ -118,7 +124,7 @@ const ConnectContent = () => {
   };
 
   const handleLogout = () => {
-    window.localStorage.removeItem("sara_token");
+    window.localStorage.clear();
     setToken(null);
     // setConnectedProvider(null);
     router.push("/login");
@@ -133,6 +139,12 @@ const ConnectContent = () => {
   if (!token) {
     return null;
   }
+  // useEffect(()=>{
+  //  const provider:any=localStorage.getItem("provider")
+  //  if(provider){
+  //   setConnectedProvider(provider)
+  //  }
+  // },[])
 
   return (
     <div className="flex items-center gap-4">

@@ -1,43 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { getHistoryId, getHistory } from '../app/services/users'; 
 
-const API_URL = process.env.NEXT_PUBLIC_BE_API_URL
-
-const getHistoryId = async () => {
-  const response = await fetch(`${API_URL}/sessions/`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem("sara_token")}`
-    }
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch history IDs');
-  }
-  
-  return response.json();
-};
-
-const getHistory = async (id: string) => {
-  const apiKey = "sk_f663505088dd237906010c5d9007258bad539fac79f45a99";
-  
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversations/${id}`,
-    {
-      method: 'GET',
-      headers: {
-        'xi-api-key': apiKey,
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to get conversation history');
-  }
-
-  return response.json();
-};
 interface SessionData {
   user: number;
   session_id: string;
@@ -66,7 +30,7 @@ const ConversationHistory = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await getHistoryId();
+      const response:any = await getHistoryId();
       setSessions(response.sort((a: SessionData, b: SessionData) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ));
@@ -194,4 +158,4 @@ const ConversationHistory = () => {
   );
 };
 
-export default ConversationHistory;
+export default React.memo(ConversationHistory);

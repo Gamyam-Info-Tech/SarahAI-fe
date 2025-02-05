@@ -22,10 +22,6 @@ export const codeexchange = async(data: CodeExchangeData) => {
     return await apiPostService('/nylas/exchange_token/', data,true);
 }
 
-export const historyUser = async(data: any) => {
-    return await apiGetService('/v1/history/');
-}
-
 export const sessionId = async(data: any) => {
     return await apiPostService('/sessions/store_session/', data);
 }
@@ -34,9 +30,13 @@ export const getHistoryId = async() => {
     return await apiGetService('/sessions/');
 }
 
-export const getHistory = async(id: any) => {
+export const getHistory = async(id: string) => {
+    // Return early if id is undefined or null
+    if (!id) {
+        return null;
+    }
+    
     const apiKey: string = "sk_f663505088dd237906010c5d9007258bad539fac79f45a99";
-    const agentId = "FJVa4IrSWE78kdgdNjI1";
     
     try {
         const response = await fetch(
@@ -50,7 +50,7 @@ export const getHistory = async(id: any) => {
         );
 
         if (!response.ok) {
-            throw new Error('Failed to get signed URL');
+            throw new Error('Failed to get conversation history');
         }
 
         const data = await response.json();

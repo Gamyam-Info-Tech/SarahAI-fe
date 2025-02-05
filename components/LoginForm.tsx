@@ -15,6 +15,7 @@ interface LoginFormProps {
 interface FormData {
   email: string
   password: string
+  name?: string
 }
 
 interface LoginResponse {
@@ -32,7 +33,6 @@ const LoginForm = ({ type }: LoginFormProps) => {
   const [error, setError] = useState("")
   const [hasToken, setHasToken] = useState(false)
 
-  // Safe localStorage check
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('sara_token')
@@ -45,6 +45,7 @@ const LoginForm = ({ type }: LoginFormProps) => {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
+    setError("") 
     try {
       if (type === "register") {
         await registerUser(data)
@@ -53,9 +54,12 @@ const LoginForm = ({ type }: LoginFormProps) => {
         const response = await login(data) as LoginResponse
         if (response.tokens?.access) {
           if (typeof window !== 'undefined') {
-            console.log(response)
             localStorage.setItem("sara_token", response.tokens.access)
             localStorage.setItem("id", response.user.id)
+            localStorage.setItem("user_name",response.user.name)
+            if(response?.user?.provider){
+              localStorage.setItem("provider",response.user.provider)
+            }
             router.push('/')
             window.location.reload()
           }
@@ -73,20 +77,34 @@ const LoginForm = ({ type }: LoginFormProps) => {
     setLoading(false)
   }
 
-  // Prevent flash of login form if user is already logged in
   if (hasToken) {
     return null
   }
 
   return (
-    <div className={"flex justify-center items-center w-[100%] h-[100vh] px-[40px] md:px-[0px] "}>
-      <Card className={'rounded-3xl w-[100%] md:w-[400px] '}>
+    <div className="flex justify-center items-center w-[100%] h-[100vh] px-[40px] md:px-[0px]">
+      <Card className="rounded-3xl w-[100%] md:w-[400px]">
         <CardContent className="p-0">
           <CardHeader>
             <CardTitle className="p-0 text-[24px] text-center">
               {type === "register" ? "Register" : "Login"}
             </CardTitle>
             <div className="flex flex-col gap-5">
+              {type === "register" && (
+                <GlobalInput
+                  control={control}
+                  label="Username"
+                  name="name"
+                  rules={{
+                    required: "Username is required",
+                    minLength: {
+                      value: 3,
+                      message: 'Username must be at least 3 characters'
+                    }
+                  }}
+                  errors={errors.name}
+                />
+              )}
               <GlobalInput
                 control={control}
                 label="Enter Email"
@@ -113,17 +131,23 @@ const LoginForm = ({ type }: LoginFormProps) => {
               <div>
                 {error && <p className="text-[red] text-center">{error}</p>}
                 <Button
-                  variant={'outline'}
-                  className={'rounded-[12px] h-[50px] w-full'}
-                  size={"lg"}
+                  variant="outline"
+                  className="rounded-[12px] h-[50px] w-full"
+                  size="lg"
                   onClick={methods.handleSubmit(onSubmit)}
                 >
                   {loading ? "Loading..." : type === "register" ? "Register" : "Login"}
                 </Button>
               </div>
-              {type === "register" ?
-                <p className="text-center">Already have an account <Link href="/login"><span className="text-[#797a83]">Login</span></Link> </p>:
-                <p className="text-center">{"Don't have an account"}<Link href="/register"><span className="text-[#797a83]">Register</span> </Link></p>}
+              {type === "register" ? (
+                <p className="text-center">
+                  Already have an account <Link href="/login"><span className="text-[#797a83]">Login</span></Link>
+                </p>
+              ) : (
+                <p className="text-center">
+                  Don't have an account <Link href="/register"><span className="text-[#797a83]">Register</span></Link>
+                </p>
+              )}
             </div>
           </CardHeader>
         </CardContent>

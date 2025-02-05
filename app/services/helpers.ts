@@ -1,9 +1,8 @@
 // Constants
 export const API_URL = process.env.NEXT_PUBLIC_BE_API_URL
-console.log(API_URL)
+
 // Types
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
 
 interface RequestOptions {
   method: HttpMethod;
@@ -13,12 +12,11 @@ interface RequestOptions {
 
 // Helper functions
 const getAuthToken = (bot_token=false): string | null => {
-  const token=localStorage.getItem("sara_token")
-  if(token){
-   return bot_token?"Bot ZmlaXnksCbjdVhgf_8": `Bearer ${localStorage.getItem("sara_token")}`;
+  const token = localStorage.getItem("sara_token")
+  if(token) {
+    return bot_token ? "Bot ZmlaXnksCbjdVhgf_8" : `Bearer ${token}`;
   }
   return null
-  
 };
 
 const getHeaders = (bot_token=false): HeadersInit => {
@@ -28,7 +26,6 @@ const getHeaders = (bot_token=false): HeadersInit => {
 
   const token = getAuthToken(bot_token);
   if (token) {
-    // const req="Bot ZmlaXnksCbjdVhgf_8"
     headers.Authorization = `${token}`;
   }
   return headers;
@@ -37,16 +34,29 @@ const getHeaders = (bot_token=false): HeadersInit => {
 const handleApiError = async (response: Response): Promise<never> => {
   try {
     const errorData = await response.json();
-    let errorMessage: string;
-
-    if (typeof errorData === 'object') {
-      errorMessage = Object.values(errorData).flat().join(', ');
-    } else {
-      errorMessage = errorData as string;
+    
+    // Handle authentication errors (401)
+    if (response.status === 401) {
+      throw new Error('Invalid credentials');
     }
 
-    throw new Error(errorMessage || 'An error occurred');
+    // Handle other specific error messages
+    if (typeof errorData === 'object') {
+      if ('detail' in errorData) {
+        throw new Error(errorData.detail);
+      }
+      if ('non_field_errors' in errorData) {
+        throw new Error(errorData.non_field_errors[0]);
+      }
+      const errorMessage = Object.values(errorData).flat().join(', ');
+      throw new Error(errorMessage);
+    }
+
+    throw new Error(errorData as string || 'An error occurred');
   } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error('An unexpected error occurred');
   }
 };
@@ -80,6 +90,12 @@ async function apiRequest<T>(
 
   try {
     const response = await fetch(url, options);
+    //const response=await fetch("hrr",{
+   // method:GET,
+   //headers:Barre-,
+   //
+   //
+   // })
 
     if (!response.ok) {
       await handleApiError(response);
@@ -100,7 +116,7 @@ async function apiRequest<T>(
 
 // Exported service functions
 export async function apiGetService<T>(uri: string, params?: Record<string, any>, bot_token=false): Promise<T> {
-  return apiRequest<T>(uri, 'GET', undefined, params,bot_token);
+  return apiRequest<T>(uri, 'GET', undefined, params, bot_token);
 }
 
 export async function apiPostService<T>(
@@ -108,7 +124,7 @@ export async function apiPostService<T>(
   payload: Record<string, any> = {},
   bot_token=false
 ): Promise<T> {
-  return apiRequest<T>(uri, 'POST', payload,undefined,bot_token);
+  return apiRequest<T>(uri, 'POST', payload, undefined, bot_token);
 }
 
 export async function apiPutService<T>(
