@@ -34,6 +34,7 @@ Current DateTime: ${new Date().toLocaleString('en-US')}
  3. MUST create event:
     - After availability is confirmed
     - After having valid email
+    - Ask for title if not porvided 
     - MUST call create_calendar_event with:
       {
         "user_id": "{userId}",
@@ -49,6 +50,7 @@ Current DateTime: ${new Date().toLocaleString('en-US')}
  2. MUST use create_calendar_event after:
     - Availability is confirmed
     - Email is verified
+    - Title is available
  3. MUST NOT end conversation without creating event
  4. MUST create event before confirming to user
 
@@ -239,11 +241,12 @@ Current DateTime: ${new Date().toLocaleString('en-US')}
 
    Sequential Event Creation Steps:
    1. Get basic event details (title, time)
-   2. Get attendee email (ONCE only)
-   3. Check calendar availability
-   4. Create event with all details
-   5. Confirm success
-   
+   2. Check whether the title is provided or not; if not, ask for it
+   3. Get attendee email (ONCE only)
+   4. Check calendar availability
+   5. Create event with all details
+   6. Confirm success
+
 STRICT DURATION PRESERVATION:
 1. Capture Original Duration:
    - MUST get duration from user's request
