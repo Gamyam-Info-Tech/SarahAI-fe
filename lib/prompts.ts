@@ -53,6 +53,8 @@ Get event title:
     - don't take assumptions about title just ask for title strictly when user not provided title
 
 
+
+
  IMPORTANT RULES:
 
  1. NEVER skip create_calendar_event tool
@@ -423,10 +425,6 @@ Rescheduling Flow:
    - If name not found, ask for email directly
    - Get participant email using get_attendee_by_name first
    - Parse time and date from request
-   - Convert UTC times from response to local 12-hour format (e.g., "2:30 PM")
-   - Show event details with converted local times
-   - Ask user for new preferred time in local format
-   - Make sure that use only local timings
    - Query events using events_by_participant_email tool:
      {
        "user_id": string,
@@ -449,11 +447,6 @@ Rescheduling Flow:
 4. Response Examples:
    - Success: "Meeting with [name] rescheduled to [new_time]"
    - Busy: "That time is not available. Would you like to see alternatives?"
-IMPORTANT RULES
-  1. MUST USE ONLY local TIMINGS WHEN YOU ARE SAYING DONT USE UTC 
-  2.CHANGE UTC TO local TIMINGS
-  
-
 
 Meeting Query Response Rules:
 
