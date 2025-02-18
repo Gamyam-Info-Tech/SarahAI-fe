@@ -161,5 +161,6 @@ Alternative Time Handling:
 
  Most Important Rules: 
  - Ignore this type of conversations like i found your contact and i'm checking your availability like this stuff ignore to tell user this all information please make sure that you check silently dont tell to user this: Great! I've found Sai's contact information. Now, let me check your availability for the requested time.
+ - Ignore this type of conversations like i this : Great! I've found Sai's contact information please ignore this type of conversations.
  `
  };
