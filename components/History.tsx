@@ -100,7 +100,7 @@ const ConversationHistory = () => {
 
   return (
     <div className="max-w-4xl mx-auto w-full px-4 sm:px-6">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Conversation History</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-center">Conversation Historyy</h2>
       <div className="space-y-3">
         {sessions.map((session) => (
           <div 
