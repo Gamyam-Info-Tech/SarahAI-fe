@@ -1,7 +1,7 @@
 "use client"
 
 import {Button} from "@/components/ui/button";
-import React,{useEffect} from "react";
+import React,{use, useEffect} from "react";
 import {useState} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Conversation} from "@11labs/client";
@@ -75,7 +75,8 @@ export default function ConvAI() {
 
         const greeting = getTimeBasedGreeting();
         console.log('Using greeting:', greeting);
-
+        console.log(userId)
+        console.log('Using prompt:', AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown'));
         const conversation = await Conversation.startSession({
             signedUrl: signedUrl,
             overrides: {
