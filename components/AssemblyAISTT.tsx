@@ -9,8 +9,8 @@ import { Volume2, Mic, MicOff, RefreshCw } from 'lucide-react';
 // Enable debug mode
 const DEBUG = true;
 
-// AssemblyAI API Key
-const ASSEMBLYAI_API_KEY = "59b28f55a01f4f67a59f89baca8e25b0";
+// Remove the hardcoded API key since we'll use the server-side API route
+// const ASSEMBLYAI_API_KEY = "59b28f55a01f4f67a59f89baca8e25b0";
 
 export default function AssemblyAISTT() {
   // State variables
@@ -151,7 +151,7 @@ export default function AssemblyAISTT() {
     }
   }
 
-  // Initialize the AssemblyAI WebSocket connection
+  // Initialize the AssemblyAI WebSocket connection - UPDATED
   const initAssemblySocket = async () => {
     if (DEBUG) console.log("Starting AssemblyAI WebSocket connection...");
     setConnectionError(null);
@@ -159,16 +159,12 @@ export default function AssemblyAISTT() {
     lastTranscriptRef.current = '';
     
     try {
-      // Get the WebSocket token directly from AssemblyAI
-      const tokenResponse = await fetch('https://api.assemblyai.com/v2/realtime/token', {
+      // Get the WebSocket token from our proxy API endpoint
+      const tokenResponse = await fetch('/api/assemblyai-token', {
         method: 'POST',
         headers: {
-          'authorization': ASSEMBLYAI_API_KEY,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          'expires_in': 3600 // Token valid for 1 hour
-        })
+          'Content-Type': 'application/json'
+        }
       });
       
       if (!tokenResponse.ok) {
@@ -353,9 +349,6 @@ export default function AssemblyAISTT() {
       processingStateRef.current = false;
     }
   };
-  
-  // This function is no longer needed since we're streaming continuously
-  // It's removed to avoid sending duplicate transcripts
   
   // Play audio response
   const playAudioResponse = (base64Audio: string) => {
