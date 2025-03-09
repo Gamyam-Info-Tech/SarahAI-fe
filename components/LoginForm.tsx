@@ -16,6 +16,7 @@ interface FormData {
   email: string
   password: string
   name?: string
+  phone_number?: string
 }
 
 interface LoginResponse {
@@ -26,6 +27,7 @@ interface LoginResponse {
 }
 
 const LoginForm = ({ type }: LoginFormProps) => {
+  console.log("Form type:", type); // Add this debug log
   const router = useRouter()
   const methods = useForm<FormData>({ mode: "all" })
   const { control, formState: { errors }, reset } = methods
@@ -44,6 +46,7 @@ const LoginForm = ({ type }: LoginFormProps) => {
   }, [router])
 
   const onSubmit = async (data: FormData) => {
+    console.log("Form data being submitted:", data) // This log should show phone_number
     setLoading(true)
     setError("") 
     try {
@@ -118,6 +121,21 @@ const LoginForm = ({ type }: LoginFormProps) => {
                 }}
                 errors={errors.email}
               />
+              {type === "register" && (
+                <GlobalInput
+                  control={control}
+                  label="Phone Number"
+                  name="phone_number"
+                  rules={{
+                    required: "Phone number is required",
+                    pattern: {
+                      value: /^[0-9+\-\s()]{10,15}$/,
+                      message: 'Please enter a valid phone number'
+                    }
+                  }}
+                  errors={errors.phone_number}
+                />
+              )}
               <GlobalInput
                 control={control}
                 label="Password"

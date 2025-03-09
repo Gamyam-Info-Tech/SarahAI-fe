@@ -6,6 +6,14 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {cn} from "@/lib/utils";
 import { apiPostService } from "@/app/services/helpers";
 
+// Define interface for API response
+interface AssistantResponse {
+    transcribed_text?: string;
+    bot_response?: {
+        response: string;
+    };
+}
+
 async function requestMicrophonePermission() {
     try {
         await navigator.mediaDevices.getUserMedia({audio: true})
@@ -99,7 +107,7 @@ export default function ConvAI() {
             formData.append('user_id', userId);
             
             // Send audio to speech-to-text endpoint
-            const response = await apiPostService('/nylas/voice_assistant/', formData, true);
+            const response = await apiPostService<AssistantResponse>('/letta/voice_assistant/', formData, true);
             
             // Check if we got a transcription
             if (response.transcribed_text) {

@@ -25,6 +25,18 @@ interface AssistantResponse {
   response_type: 'text' | 'voice';
 }
 
+// Interfaces for TypeScript error fixes
+interface ToolCall {
+  function?: {
+    name: string;
+    arguments: string;
+  };
+}
+
+interface FunctionMessage {
+  tool_calls?: ToolCall[];
+}
+
 const WhatsAppTTS = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -51,7 +63,7 @@ const WhatsAppTTS = () => {
     setIsSpeaking(true);
     try {
       const response = await apiPostService<AssistantResponse>(
-        '/nylas/voice_assistant/',
+        '/letta/voice_assistant/',
         {
           text,
           user_id: getUserId()
@@ -140,7 +152,7 @@ const WhatsAppTTS = () => {
       
       // Send to voice_note_assistant endpoint (for WhatsApp audio messages)
       const response = await apiPostService<AssistantResponse>(
-        '/nylas/voice_note_assistant/',
+        '/letta/voice_note_assistant/',
         formData,
         true
       );
@@ -224,7 +236,7 @@ const WhatsAppTTS = () => {
       
       // Send to text_assistant endpoint
       const response = await apiPostService<AssistantResponse>(
-        '/nylas/text_assistant/',
+        '/letta/text_assistant/',
         {
           text: inputMessage,
           user_id: userId
@@ -236,8 +248,12 @@ const WhatsAppTTS = () => {
       let botResponseText = '';
       
       if (response.bot_response) {
+        // Check if bot_response is a simple string
+        if (typeof response.bot_response === 'string') {
+          botResponseText = response.bot_response;
+        }
         // Check if bot_response has a response property
-        if (response.bot_response.response) {
+        else if (response.bot_response.response) {
           botResponseText = response.bot_response.response;
         } else {
           // Try to extract from Letta response structure
@@ -248,7 +264,7 @@ const WhatsAppTTS = () => {
           try {
             if (letta.messages && Array.isArray(letta.messages)) {
               // Try to find a function call with 'send_message'
-              const functionMessage = letta.messages.find(msg => 
+              const functionMessage = letta.messages.find((msg: FunctionMessage) => 
                 msg.tool_calls && 
                 msg.tool_calls.find(tool => 
                   tool.function && tool.function.name === 'send_message'
@@ -256,8 +272,8 @@ const WhatsAppTTS = () => {
               );
               
               if (functionMessage) {
-                const toolCall = functionMessage.tool_calls.find(
-                  tool => tool.function && tool.function.name === 'send_message'
+                const toolCall = functionMessage.tool_calls?.find(
+                  (tool: ToolCall) => tool.function && tool.function.name === 'send_message'
                 );
                 if (toolCall && toolCall.function) {
                   try {
@@ -326,17 +342,17 @@ const WhatsAppTTS = () => {
     }
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Welcome message on component mount
   useEffect(() => {
     if (messages.length === 0) {
+      const userName = localStorage.getItem('user_name') || 'there';
+      
       const welcomeMessage: Message = {
         id: 'welcome',
-        text: "Welcome to the WhatsApp  interface. Type a message or use voice input to get started.",
+        text: `Hi ${userName}, How can I help you today!`,
         isUser: false,
         timestamp: new Date(),
       };
@@ -386,17 +402,6 @@ const WhatsAppTTS = () => {
               </div>
             </div>
             
-            {!message.isUser && !message.isAudio && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="ml-1 text-gray-500 hover:text-blue-500 h-6 w-6"
-                onClick={() => speakMessage(message.text)}
-                disabled={isSpeaking}
-              >
-                <Volume2 className="h-3 w-3" />
-              </Button>
-            )}
           </div>
         ))}
         <div ref={messagesEndRef} />

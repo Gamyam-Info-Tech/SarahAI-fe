@@ -20,22 +20,22 @@ export default function AssemblyAISTT() {
   const [statusMessage, setStatusMessage] = useState('Ready');
   const [connectionState, setConnectionState] = useState('closed');
   const [isInitializing, setIsInitializing] = useState(false);
-  const [connectionError, setConnectionError] = useState(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [responseType, setResponseType] = useState('text'); // 'text' or 'voice'
-  const [audioResponse, setAudioResponse] = useState(null);
+  const [audioResponse, setAudioResponse] = useState<string | null>(null);
   
   // References
-  const mediaStreamRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const assemblySocketRef = useRef(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const assemblySocketRef = useRef<WebSocket | null>(null);
   const lastTranscriptRef = useRef('');
-  const reconnectTimeoutRef = useRef(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const keepAliveIntervalRef = useRef(null);
+  const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasReceivedMessageRef = useRef(false);
-  const audioProcessorRef = useRef(null);
-  const audioSourceRef = useRef(null);
-  const audioRef = useRef(null);
+  const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const processingStateRef = useRef(false);
   const lastSentTranscriptRef = useRef('');
   // Debounce/cooldown for API calls
@@ -277,7 +277,7 @@ export default function AssemblyAISTT() {
       assemblySocketRef.current = socket;
       return true;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
       setStatusMessage('Failed to initialize speech recognition');
       setConnectionError(error.message || "Unknown error");
@@ -286,7 +286,7 @@ export default function AssemblyAISTT() {
   };
   
   // Send transcript stream to backend continuously during speech
-  const sendStreamToBackend = async (transcript, requestId) => {
+  const sendStreamToBackend = async (transcript: string, requestId: string) => {
     if (!transcript || transcript.trim() === '') return;
     
     try {
@@ -301,7 +301,7 @@ export default function AssemblyAISTT() {
       if (DEBUG) console.log(`Streaming to backend [${requestId}]:`, transcript);
       
       // Call the voice_assistant endpoint with the transcript text
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BE_API_URL || ''}/nylas/voice_assistant/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BE_API_URL || ''}/letta/voice_assistant/`, {
         method: 'POST',
         headers: {
           'Authorization': 'Bot ZmlaXnksCbjdVhgf_8',
@@ -358,7 +358,7 @@ export default function AssemblyAISTT() {
   // It's removed to avoid sending duplicate transcripts
   
   // Play audio response
-  const playAudioResponse = (base64Audio) => {
+  const playAudioResponse = (base64Audio: string) => {
     try {
       // Convert base64 to blob
       const byteCharacters = atob(base64Audio);
@@ -375,7 +375,7 @@ export default function AssemblyAISTT() {
       // Play audio
       if (audioRef.current) {
         audioRef.current.src = audioUrl;
-        audioRef.current.play().catch(error => {
+        audioRef.current.play().catch((error: Error) => {
           console.error("Error playing audio:", error);
         });
       }
@@ -405,11 +405,12 @@ export default function AssemblyAISTT() {
       clearTimeout(reconnectTimeoutRef.current);
     }
     
+    // Using 'as NodeJS.Timeout' to satisfy TypeScript
     reconnectTimeoutRef.current = setTimeout(() => {
       if (isListening) {
         initAssemblySocket();
       }
-    }, delay);
+    }, delay) as NodeJS.Timeout;
   };
   
   // Start listening for speech
@@ -444,7 +445,7 @@ export default function AssemblyAISTT() {
       
       try {
         // Create audio context with specific sample rate
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
           sampleRate: SAMPLE_RATE,
           latencyHint: 'interactive'
         });
@@ -587,7 +588,7 @@ export default function AssemblyAISTT() {
     
     if (mediaStreamRef.current) {
       try {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       } catch (trackError) {
         console.error("Error stopping tracks:", trackError);
       } finally {
@@ -607,7 +608,7 @@ export default function AssemblyAISTT() {
   };
   
   // Helper function to convert audio data for transmission
-  const convertFloat32ToInt16 = (float32Array) => {
+  const convertFloat32ToInt16 = (float32Array: Float32Array) => {
     const length = float32Array.length;
     const int16Array = new Int16Array(length);
     
@@ -638,7 +639,7 @@ export default function AssemblyAISTT() {
   
   // Listen for keyboard shortcuts - removed R key shortcut for reset
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // Space bar to toggle listening (only when not in an input/textarea)
       if (e.code === 'Space' && 
           e.target instanceof HTMLElement && 
@@ -673,12 +674,12 @@ export default function AssemblyAISTT() {
   };
   
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center min-h-[36px]">
       <Card className="rounded-xl w-full max-w-sm">
         <CardContent className="p-6">
           <CardHeader className="px-0">
             <CardTitle className="text-center text-2xl">
-              SARA AI
+              SARAH AI
             </CardTitle>
           </CardHeader>
           
