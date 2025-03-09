@@ -236,7 +236,7 @@ const WhatsAppTTS = () => {
       
       // Send to text_assistant endpoint
       const response = await apiPostService<AssistantResponse>(
-        '/letta/text_assistant/',
+        '/letta/chat/',
         {
           text: inputMessage,
           user_id: userId
