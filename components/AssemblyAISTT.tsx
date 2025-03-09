@@ -161,7 +161,7 @@ export default function AssemblyAISTT() {
     try {
       // Get the WebSocket token from our proxy API endpoint
       const tokenResponse = await fetch('/api/assemblyai-token', {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }

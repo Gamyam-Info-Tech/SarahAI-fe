@@ -1,9 +1,22 @@
 // File: /app/api/assemblyai-token/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+// Handle GET requests
+export async function GET() {
+  return await getAssemblyAIToken();
+}
+
+// Handle POST requests
 export async function POST() {
+  return await getAssemblyAIToken();
+}
+
+// Common function to get token
+async function getAssemblyAIToken() {
   try {
+    console.log("Getting AssemblyAI token...");
+    
     const tokenResponse = await fetch('https://api.assemblyai.com/v2/realtime/token', {
       method: 'POST',
       headers: {
@@ -16,6 +29,7 @@ export async function POST() {
     });
     
     if (!tokenResponse.ok) {
+      console.error(`Failed to get token: ${tokenResponse.status}`);
       return NextResponse.json(
         { error: `Failed to get token: ${tokenResponse.status}` }, 
         { status: tokenResponse.status }
@@ -23,6 +37,7 @@ export async function POST() {
     }
     
     const tokenData = await tokenResponse.json();
+    console.log("Successfully got AssemblyAI token");
     return NextResponse.json(tokenData);
   } catch (error) {
     console.error('Error getting AssemblyAI token:', error);
