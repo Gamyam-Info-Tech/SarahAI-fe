@@ -1,14 +1,18 @@
 "use client"
 
 import {Button} from "@/components/ui/button";
-import React,{use, useEffect} from "react";
-import {useState} from "react";
+import React, {useEffect, useState, useRef} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Conversation} from "@11labs/client";
 import {cn} from "@/lib/utils";
-import {AGENT_PROMPTS} from "@/lib/prompts";
+import { apiPostService } from "@/app/services/helpers";
 
-import { getHistory, getHistoryId, sessionId } from "@/app/services/users";
+// Define interface for API response
+interface AssistantResponse {
+    transcribed_text?: string;
+    bot_response?: {
+        response: string;
+    };
+}
 
 async function requestMicrophonePermission() {
     try {
@@ -20,140 +24,159 @@ async function requestMicrophonePermission() {
     }
 }
 
-async function getSignedUrl(): Promise<string> {
-    const response = await fetch('/api/signed-url')
-    if (!response.ok) {
-        throw Error('Failed to get signed url')
-    }
-    const data = await response.json()
-    return data.signedUrl
-}
-
-function getTimeBasedGreeting() {
-    const hour = new Date().getHours();
-    const userName = localStorage.getItem("user_name") || "there";
-    const formattedName = userName.charAt(0).toUpperCase() + userName.slice(1);
-    
-    if (hour >= 5 && hour < 12) {
-        return `Good morning, ${formattedName}! Ready to tackle the day together? 😊`;
-    } else if (hour >= 12 && hour < 18) {
-        return `Hello ${formattedName}! Hope you're having a wonderful day. How can I help you? 😊`;
-    } else {
-        return `Hi ${formattedName}! Hope you had a great day! I'm here to help with anything you need! 😊`;
-    }
-}
-
 export default function ConvAI() {
-    const [conversation, setConversation] = useState<Conversation | null>(null)
-    const [isConnected, setIsConnected] = useState(false)
-    const [isSpeaking, setIsSpeaking] = useState(false)
-
-    const fetchHistoryId=async()=>{
-        try{
-            const ids:any= await getHistoryId()
-            console.log(ids,"ids")
-            await getHistory(ids?.[0]?.session_id)
-        }catch(err){
-            console.log(err)
-        }
-    }
-
-    useEffect(()=>{
-        fetchHistoryId()
-    },[])
-
-    async function startConversation() {
-        const hasPermission = await requestMicrophonePermission()
+    const [isListening, setIsListening] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('Ready');
+    const [transcribedText, setTranscribedText] = useState('');
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    
+    // Initialize and start recording
+    async function startSpeechToText() {
+        const hasPermission = await requestMicrophonePermission();
         if (!hasPermission) {
-            alert("No permission")
+            alert("Microphone permission is required");
             return;
         }
         
-        const userId = localStorage.getItem("id")
-        const signedUrl = await getSignedUrl()
-        console.log(signedUrl,"signedUrl")
-
-        const greeting = getTimeBasedGreeting();
-        console.log('Using greeting:', greeting);
-        console.log(userId)
-        console.log('Using prompt:', AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown'));
-        const conversation = await Conversation.startSession({
-            signedUrl: signedUrl,
-            overrides: {
-                agent: {
-                    firstMessage: greeting,
-                    prompt: {
-                        prompt: AGENT_PROMPTS.default.replace('{userId}', userId || 'unknown')
-                    }
+        try {
+            setStatusMessage('Listening...');
+            audioChunksRef.current = [];
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            
+            recorder.onstart = () => {
+                setIsListening(true);
+                audioChunksRef.current = [];
+            };
+            
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
                 }
-            },
-            onConnect: () => {
-                setIsConnected(true)
-                setIsSpeaking(true)
-            },
-            onDisconnect: () => {
-                setIsConnected(false)
-                setIsSpeaking(false)
-            },
-            onError: (error) => {
-                console.log(error)
-                alert('An error occurred during the conversation')
-            },
-            onModeChange: ({mode}) => {
-                setIsSpeaking(mode === 'speaking')
-            },
-        })
-        const id = conversation.getId();
-        setConversation(conversation)
-        await sessionId({session_id:id})
-    }
-
-    async function endConversation() {
-        if (!conversation) {
-            return
+            };
+            
+            recorder.onstop = async () => {
+                setIsListening(false);
+                setIsProcessing(true);
+                setStatusMessage('Processing...');
+                
+                try {
+                    await processAudio();
+                } catch (error) {
+                    console.error('Error processing audio:', error);
+                    setStatusMessage('Error processing audio');
+                } finally {
+                    setIsProcessing(false);
+                }
+                
+                // Stop all tracks from the stream
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            recorder.start();
+            setMediaRecorder(recorder);
+            
+        } catch (error) {
+            console.error('Error starting recording:', error);
+            setStatusMessage('Error starting recording');
         }
-        await conversation.endSession()
-        setConversation(null)
-        window.location.reload()
     }
-
+    
+    // Process recorded audio
+    async function processAudio() {
+        if (audioChunksRef.current.length === 0) {
+            setStatusMessage('No audio recorded');
+            return;
+        }
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const userId = localStorage.getItem("id");
+        
+        if (!userId) {
+            setStatusMessage('User ID not found');
+            return;
+        }
+        
+        try {
+            // Create form data with audio
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+            formData.append('user_id', userId);
+            
+            // Send audio to speech-to-text endpoint
+            const response = await apiPostService<AssistantResponse>('/letta/voice_assistant/', formData, true);
+            
+            // Check if we got a transcription
+            if (response.transcribed_text) {
+                setTranscribedText(response.transcribed_text);
+                setStatusMessage('Speech processed successfully');
+                
+                // Now send the transcribed text to Letta
+                if (response.bot_response) {
+                    setStatusMessage('Letta response: ' + response.bot_response.response);
+                }
+            } else {
+                setStatusMessage('No text transcribed');
+            }
+        } catch (error) {
+            console.error('Error processing speech:', error);
+            setStatusMessage('Error processing speech');
+        }
+    }
+    
+    // Stop recording
+    function stopRecording() {
+        if (mediaRecorder && isListening) {
+            mediaRecorder.stop();
+        }
+    }
+    
     return (
         <div className={"flex justify-center items-center gap-x-4"}>
             <Card className={'rounded-3xl'}>
                 <CardContent>
                     <CardHeader>
                         <CardTitle className={'text-center'}>
-                            {isConnected ? (
-                                isSpeaking ? `Agent is speaking` : 'Agent is listening'
-                            ) : (
-                                'Disconnected'
-                            )}
+                            {isListening ? 'Listening...' : (isProcessing ? 'Processing...' : statusMessage)}
                         </CardTitle>
                     </CardHeader>
                     <div className={'flex flex-col gap-y-4 text-center'}>
                         <div className={cn('orb my-16 mx-12',
-                            isSpeaking ? 'animate-orb' : (conversation && 'animate-orb-slow'),
-                            isConnected ? 'orb-active' : 'orb-inactive')}
+                            isListening ? 'animate-orb' : (isProcessing && 'animate-orb-slow'),
+                            (isListening || isProcessing) ? 'orb-active' : 'orb-inactive')}
                         ></div>
 
-                        <Button
-                            variant={'outline'}
-                            className={'rounded-full'}
-                            size={"lg"}
-                            disabled={conversation !== null && isConnected}
-                            onClick={startConversation}
-                        >
-                            Start conversation
-                        </Button>
-                        <Button
-                            variant={'outline'}
-                            className={'rounded-full'}
-                            size={"lg"}
-                            disabled={conversation === null && !isConnected}
-                            onClick={endConversation}
-                        >
-                            End conversation
-                        </Button>
+                        {!isListening && !isProcessing && (
+                            <Button
+                                variant={'outline'}
+                                className={'rounded-full'}
+                                size={"lg"}
+                                onClick={startSpeechToText}
+                            >
+                                Start listening
+                            </Button>
+                        )}
+                        
+                        {isListening && (
+                            <Button
+                                variant={'outline'}
+                                className={'rounded-full'}
+                                size={"lg"}
+                                onClick={stopRecording}
+                            >
+                                Stop listening
+                            </Button>
+                        )}
+                        
+                        {transcribedText && (
+                            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-left">
+                                <p className="font-semibold">Transcribed Text:</p>
+                                <p>{transcribedText}</p>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

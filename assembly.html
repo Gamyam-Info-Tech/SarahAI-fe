@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssemblyAI Speech-to-Text Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        .orb {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            transition: all 0.3s ease;
+        }
+        .orb-inactive {
+            background-color: #e5e7eb;
+            border: 3px solid #d1d5db;
+        }
+        .orb-active {
+            background-color: #93c5fd;
+            border: 3px solid #3b82f6;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button svg {
+            width: 18px;
+            height: 18px;
+        }
+        .btn-start {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-start:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+        .btn-stop {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-stop:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+        .btn-reset {
+            background-color: transparent;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+        .btn-reset:hover:not(:disabled) {
+            background-color: #f3f4f6;
+        }
+        .transcript-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .interim {
+            color: #6b7280;
+            font-style: italic;
+        }
+        .transcript {
+            white-space: pre-line;
+        }
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin: 10px 0;
+        }
+        kbd {
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 1px 1px rgba(0,0,0,.2);
+            color: #374151;
+            display: inline-block;
+            font-size: 0.85em;
+            padding: 2px 4px;
+        }
+        .keyboard-shortcuts {
+            text-align: center;
+            margin-top: 20px;
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AssemblyAI Speech-to-Text Demo</h1>
+        
+        <div id="orb" class="orb orb-inactive"></div>
+        
+        <div id="status" class="status">Ready</div>
+        
+        <div id="error" class="error"></div>
+        
+        <div class="controls">
+            <button id="startBtn" class="btn-start">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                Start Listening
+            </button>
+            
+            <button id="stopBtn" class="btn-stop" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                Stop Listening
+            </button>
+            
+            <button id="resetBtn" class="btn-reset" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                </svg>
+                Reset
+            </button>
+        </div>
+        
+        <div class="keyboard-shortcuts">
+            <div>Press <kbd>Space</kbd> to toggle listening</div>
+            <div>Press <kbd>Ctrl</kbd>+<kbd>R</kbd> to reset</div>
+        </div>
+        
+        <div id="interimDiv" class="interim"></div>
+        
+        <div id="transcriptContainer" class="transcript-container">
+            <div id="transcript" class="transcript"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const orb = document.getElementById('orb');
+        const statusDiv = document.getElementById('status');
+        const errorDiv = document.getElementById('error');
+        const interimDiv = document.getElementById('interimDiv');
+        const transcriptDiv = document.getElementById('transcript');
+        
+        // State
+        let isListening = false;
+        let mediaStream = null;
+        let audioContext = null;
+        let assemblySocket = null;
+        let currentUtterance = '';
+        let processor = null;
+        let source = null;
+        
+        // Configuration
+        const DEBUG = true;
+        
+        // Setup event listeners
+        startBtn.addEventListener('click', startListening);
+        stopBtn.addEventListener('click', stopListening);
+        resetBtn.addEventListener('click', resetTranscription);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Space to toggle listening
+            if (e.code === 'Space' && 
+                e.target.tagName !== 'INPUT' && 
+                e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (isListening) {
+                    stopListening();
+                } else {
+                    startListening();
+                }
+            }
+            
+            // Ctrl+R to reset
+            if (e.code === 'KeyR' && 
+                (e.ctrlKey || e.metaKey) &&
+                e.target.tagName !== 'INPUT' && 
+                e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                resetTranscription();
+            }
+        });
+        
+        // Get a temporary token from AssemblyAI
+        async function getAssemblyAIToken() {
+            try {
+                // In a real app, you would get this from your backend
+                // This is just for demonstration - replace with your API key
+                const ASSEMBLYAI_API_KEY = "59b28f55a01f4f67a59f89baca8e25b0";
+                
+                const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
+                    method: 'POST',
+                    headers: {
+                        'authorization': ASSEMBLYAI_API_KEY,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        expires_in: 3600  // Token valid for 1 hour
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to get token: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.token;
+            } catch (error) {
+                console.error('Error getting token:', error);
+                errorDiv.innerText = `Error getting token: ${error.message}`;
+                return null;
+            }
+        }
+        
+        // Convert float32 audio data to int16 for transmission
+        function convertFloat32ToInt16(float32Array) {
+            const length = float32Array.length;
+            const int16Array = new Int16Array(length);
+            
+            for (let i = 0; i < length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            
+            return int16Array.buffer;
+        }
+        
+        // Initialize AssemblyAI WebSocket
+        async function initAssemblySocket() {
+            try {
+                log('Initializing AssemblyAI connection...');
+                
+                // Get token
+                const token = await getAssemblyAIToken();
+                if (!token) {
+                    throw new Error('Failed to get AssemblyAI token');
+                }
+                
+                // Create WebSocket connection
+                const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
+                
+
+                socket.onopen = () => {
+                    log('WebSocket connection opened');
+                    
+                    // Configure the real-time transcription
+                    // const config = {
+                    //     sample_rate: 16000,
+                    // };
+                    
+                    // socket.send(JSON.stringify(config));
+                    statusDiv.innerText = 'Connected to AssemblyAI';
+                };
+                
+                socket.onmessage = (event) => {
+                    const result = JSON.parse(event.data);
+                    
+                    if (result.message_type === 'PartialTranscript') {
+                        // Show interim results
+                        interimDiv.innerText = result.text || '';
+                    } else if (result.message_type === 'FinalTranscript') {
+                        // Handle final results
+                        interimDiv.innerText = '';
+                        
+                        if (result.text && result.text.trim()) {
+                            currentUtterance += result.text + ' ';
+                            transcriptDiv.innerText = currentUtterance;
+                            
+                            // Scroll to bottom
+                            const container = document.getElementById('transcriptContainer');
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    } else if (result.error) {
+                        errorDiv.innerText = result.error;
+                        log('AssemblyAI error:', result);
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    errorDiv.innerText = 'Connection error';
+                };
+                
+                socket.onclose = (event) => {
+                    log(`WebSocket closed: ${event.code} ${event.reason}`);
+                    statusDiv.innerText = event.code !== 1000 
+                        ? `Connection closed: ${event.reason || 'Unknown reason'}`
+                        : 'Ready';
+                        
+                    if (isListening) {
+                        stopListening();
+                    }
+                };
+                
+                return socket;
+            } catch (error) {
+                console.error('Error initializing:', error);
+                errorDiv.innerText = error.message;
+                return null;
+            }
+        }
+        
+        // Start listening for speech
+        async function startListening() {
+            try {
+                log('Starting listening...');
+                errorDiv.innerText = '';
+                
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                mediaStream = stream;
+                
+                // Initialize WebSocket connection
+                assemblySocket = await initAssemblySocket();
+                if (!assemblySocket) {
+                    throw new Error('Failed to initialize AssemblyAI connection');
+                }
+                
+                // Initialize audio processing
+                const SAMPLE_RATE = 16000;
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: SAMPLE_RATE
+                });
+                
+                source = audioContext.createMediaStreamSource(stream);
+                processor = audioContext.createScriptProcessor(4096, 1, 1);
+                
+                processor.onaudioprocess = (e) => {
+                    if (assemblySocket && assemblySocket.readyState === WebSocket.OPEN) {
+                        // Get audio data
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        
+                        // Convert to 16-bit PCM
+                        const pcmData = convertFloat32ToInt16(inputData);
+                        
+                        // Send audio data
+                        assemblySocket.send(pcmData);
+                    }
+                };
+                
+                // Connect audio pipeline
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+                
+                // Update UI
+                isListening = true;
+                orb.className = 'orb orb-active';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                resetBtn.disabled = false;
+                statusDiv.innerText = 'Listening...';
+                
+            } catch (error) {
+                console.error('Error starting:', error);
+                errorDiv.innerText = error.message;
+                cleanup();
+            }
+        }
+        
+        // Stop listening
+        function stopListening() {
+            log('Stopping...');
+            
+            // Close WebSocket connection
+            if (assemblySocket && assemblySocket.readyState === WebSocket.OPEN) {
+                try {
+                    assemblySocket.send(JSON.stringify({ terminate_session: true }));
+                    assemblySocket.close();
+                } catch (error) {
+                    console.error('Error closing WebSocket:', error);
+                }
+            }
+            
+            cleanup();
+            statusDiv.innerText = 'Stopped listening';
+        }
+        
+        // Reset transcription
+        function resetTranscription() {
+            log('Resetting transcription');
+            currentUtterance = '';
+            interimDiv.innerText = '';
+            transcriptDiv.innerText = '';
+            resetBtn.disabled = true;
+        }
+        
+        // Cleanup resources
+        function cleanup() {
+            // Stop microphone
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            // Disconnect audio processing
+            if (source && processor) {
+                try {
+                    source.disconnect(processor);
+                    processor.disconnect();
+                } catch (error) {
+                    console.error('Error disconnecting audio:', error);
+                }
+                source = null;
+                processor = null;
+            }
+            
+            // Close audio context
+            if (audioContext && audioContext.state !== 'closed') {
+                try {
+                    audioContext.close();
+                } catch (error) {
+                    console.error('Error closing audio context:', error);
+                }
+                audioContext = null;
+            }
+            
+            // Update UI
+            isListening = false;
+            orb.className = 'orb orb-inactive';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+        
+        // Helper for logging
+        function log(message) {
+            if (DEBUG) console.log(message);
+        }
+    </script>
+</body>
+</html>
