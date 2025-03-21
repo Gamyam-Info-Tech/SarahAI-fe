@@ -143,7 +143,7 @@ export default function AssemblyAISTT() {
                 (typeof data.bot_response.response === 'string' && 
                 data.bot_response.response.includes("Sorry, I'm having trouble"));
               
-              // Only process and display successful responses
+              // Inside socket.onmessage handler
               if (!isErrorResponse) {
                 // Extract response content based on structure
                 if (typeof data.bot_response === 'string') {
