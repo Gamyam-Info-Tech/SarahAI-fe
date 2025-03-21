@@ -245,8 +245,9 @@ const WhatsAppTTS = () => {
       );
       
       // Extract the bot response text
+      // Extract the bot response text
       let botResponseText = '';
-      
+
       if (response.bot_response) {
         // Check if bot_response is a simple string
         if (typeof response.bot_response === 'string') {
@@ -256,55 +257,31 @@ const WhatsAppTTS = () => {
         else if (response.bot_response.response) {
           botResponseText = response.bot_response.response;
         } else {
-          // Try to extract from Letta response structure
-          const letta = response.bot_response;
-          
-          // First try to get any function call messages
-          let extractedText = '';
+          // Extract content from assistant_message if present
+          // This is likely where your issue is occurring - when response.bot_response contains the entire JSON
           try {
-            if (letta.messages && Array.isArray(letta.messages)) {
-              // Try to find a function call with 'send_message'
-              const functionMessage = letta.messages.find((msg: FunctionMessage) => 
-                msg.tool_calls && 
-                msg.tool_calls.find(tool => 
-                  tool.function && tool.function.name === 'send_message'
-                )
-              );
+            // Try to parse as JSON if it's a string representation of JSON
+            const botResponse = typeof response.bot_response === 'string' 
+              ? JSON.parse(response.bot_response)
+              : response.bot_response;
               
-              if (functionMessage) {
-                const toolCall = functionMessage.tool_calls?.find(
-                  (tool: ToolCall) => tool.function && tool.function.name === 'send_message'
-                );
-                if (toolCall && toolCall.function) {
-                  try {
-                    const args = JSON.parse(toolCall.function.arguments);
-                    if (args.message) {
-                      extractedText = args.message;
-                    }
-                  } catch (e) {
-                    console.error('Error parsing tool call arguments:', e);
-                  }
+            // Look for assistant_message type messages
+            if (botResponse.messages && Array.isArray(botResponse.messages)) {
+              for (const msg of botResponse.messages) {
+                if (msg.message_type === 'assistant_message' && msg.content) {
+                  botResponseText = msg.content;
+                  break;
                 }
               }
             }
-          } catch (e) {
-            console.error('Error extracting tool call message:', e);
-          }
-          
-          if (extractedText) {
-            botResponseText = extractedText;
-          } else if (typeof letta === 'object') {
-            // Try common response patterns
-            if (letta.message) {
-              botResponseText = letta.message;
-            } else if (letta.content) {
-              botResponseText = letta.content;
-            } else {
-              // Fallback to stringifying the response
-              botResponseText = JSON.stringify(letta);
+            
+            // If still no text found, use a default
+            if (!botResponseText) {
+              botResponseText = "I received your message but couldn't generate a proper response.";
             }
-          } else {
-            botResponseText = "Received a response but couldn't parse it";
+          } catch (e) {
+            console.error('Error parsing bot response:', e);
+            botResponseText = "Received a response but couldn't process it correctly.";
           }
         }
       }
@@ -474,6 +451,7 @@ const WhatsAppTTS = () => {
             {isRecording ? "Recording audio..." : "Processing..."}
           </div>
         )}
+
       </div>
     </div>
   );
