@@ -109,7 +109,7 @@ export default function AssemblyAISTT() {
       
       // Connect to our Django backend WebSocket endpoint
       // IMPORTANT: Using explicit localhost:8000 to connect to our Daphne server
-      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:8000/ws/assembly/${userInfo.user_id}/${sessionId}/`;
+      const wsUrl = `wss://prod.thesarahai.com/ws/assembly/${userInfo.user_id}/${sessionId}/`;
       
       if (DEBUG) console.log(`Connecting to WebSocket: ${wsUrl}`);
       

@@ -17,24 +17,38 @@ interface AuthData {
 }
 
 /**
- * Request OTP for phone number
+ * Request OTP for phone number (Login)
  */
 export const requestOTP = async (data: { phone_number: string; country_code: string }): Promise<any> => {
-    return await apiPostService('/users/request-otp/', data);
+    return await apiPostService('/users/login/', data);
 };
 
 /**
  * Login with phone number, country code and OTP
  */
-export const login = async (data: { phone_number: string; otp: string; country_code: string }): Promise<any> => {
-    return await apiPostService('/users/login/', data);
+export const login = async (data: { phone_number: string; otp: string; country_code: string; request_id: string }): Promise<any> => {
+    return await apiPostService('/users/verify_otp/', data);
 };
 
 /**
- * Register a new user
+ * Register a new user - this also sends an OTP
  */
-export const registerUser = async (data: { name: string; phone_number: string; country_code: string }): Promise<any> => {
+export const initiateRegistration = async (data: { name: string; phone_number: string; country_code: string }): Promise<any> => {
     return await apiPostService('/users/register/', data);
+};
+
+/**
+ * Complete registration with OTP verification
+ */
+export const verifyAndRegister = async (data: { 
+    name: string; 
+    phone_number: string; 
+    country_code: string; 
+    otp: string;
+    request_id: string;
+}): Promise<any> => {
+    // Ensure name is included for registration flow
+    return await apiPostService('/users/verify_otp/', data);
 };
 
 /**

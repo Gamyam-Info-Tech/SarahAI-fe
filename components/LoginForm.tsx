@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import GlobalInput from './ui/input'
 import { Button } from './ui/button'
 import Link from 'next/link'
-import { login, registerUser, requestOTP } from '@/app/services/users'
+import { login, initiateRegistration, requestOTP, verifyAndRegister } from '@/app/services/users'
 import { useRouter } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
@@ -39,6 +39,7 @@ interface FormData {
 }
 
 interface LoginResponse {
+  access: any
   user: any;
   tokens?: {
     access: string;
@@ -50,7 +51,8 @@ const LoginForm = ({ type }: LoginFormProps) => {
   const methods = useForm<FormData>({
     mode: "all",
     defaultValues: {
-      country_code: '+1' // Default country code
+      country_code: '+91', // Default country code
+      name: '' // Initialize with empty string to avoid undefined
     }
   });
   
@@ -60,6 +62,8 @@ const LoginForm = ({ type }: LoginFormProps) => {
   const [hasToken, setHasToken] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
   const [requestingOTP, setRequestingOTP] = useState(false);
+  const [otpRequestId, setOtpRequestId] = useState("");
+  const [registrationInitiated, setRegistrationInitiated] = useState(false);
   
   // Watch the country code for changes
   const selectedCountryCode = watch('country_code');
@@ -77,21 +81,43 @@ const LoginForm = ({ type }: LoginFormProps) => {
   const handleRequestOTP = async () => {
     const phone_number = getValues('phone_number');
     const country_code = getValues('country_code');
+    const name = getValues('name') || ''; // Use empty string as fallback to ensure it's always a string
     
     if (!phone_number) {
       setError('Please enter a valid phone number');
       return;
     }
     
+    if (type === 'register' && !name) {
+      setError('Please enter a username');
+      return;
+    }
+    
     try {
       setRequestingOTP(true);
       setError('');
-      // Call the API to request OTP
-      await requestOTP({ 
-        phone_number,
-        country_code 
-      });
-      setOtpRequested(true);
+      
+      let data;
+      if (type === 'register') {
+        // For registration, we call the register endpoint which creates the user and sends OTP
+        data = await initiateRegistration({
+          name, // This is now guaranteed to be a string
+          phone_number,
+          country_code
+        });
+        setRegistrationInitiated(true);
+      } else {
+        // For login, we call the login endpoint to request OTP
+        data = await requestOTP({ 
+          phone_number,
+          country_code 
+        });
+      }
+      
+      if(data?.requestId){
+        setOtpRequestId(data.requestId);
+        setOtpRequested(true);
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -108,38 +134,45 @@ const LoginForm = ({ type }: LoginFormProps) => {
     setLoading(true);
     setError(""); 
     try {
+      // For both registration and login, we need to make sure OTP is provided
+      if (!data.otp) {
+        setError("OTP is required");
+        setLoading(false);
+        return;
+      }
+
       if (type === "register") {
-        // For registration, make sure name is provided
         if (!data.name) {
           setError("Username is required");
           setLoading(false);
           return;
         }
         
-        await registerUser({
-          name: data.name,
+        // For registration, verify OTP using the verify_otp endpoint
+        const response = await verifyAndRegister({
+          name: data.name, // Now we ensure this is a string
           phone_number: data.phone_number,
-          country_code: data.country_code
-        });
+          country_code: data.country_code,
+          otp: data.otp,
+          request_id: otpRequestId
+        }) as LoginResponse;
         
-        router.push('/login');
-      } else {
-        // For login, we need to make sure OTP is provided
-        if (!data.otp) {
-          setError("OTP is required");
-          setLoading(false);
-          return;
+        // If verification successful, redirect to login
+        if (response) {
+          router.push('/login');
         }
-        
+      } else {
+        // For login, verify OTP and get tokens
         const response = await login({
           phone_number: data.phone_number,
           country_code: data.country_code,
-          otp: data.otp
+          otp: data.otp,
+          request_id: otpRequestId 
         }) as LoginResponse;
         
-        if (response.tokens?.access) {
+        if (response?.access) {
           if (typeof window !== 'undefined') {
-            localStorage.setItem("sara_token", response.tokens.access);
+            localStorage.setItem("sara_token", response?.access);
             localStorage.setItem("id", response.user.id);
             localStorage.setItem("user_name", response.user.name);
             if(response?.user?.provider){
@@ -225,35 +258,34 @@ const LoginForm = ({ type }: LoginFormProps) => {
                 errors={errors.phone_number}
               />
               
-              {type === "login" && (
-                <>
-                  {!otpRequested ? (
-                    <Button
-                      variant="outline"
-                      className="rounded-[12px] h-[50px] w-full"
-                      size="lg"
-                      onClick={handleRequestOTP}
-                      disabled={requestingOTP}
-                    >
-                      {requestingOTP ? "Sending..." : "Request OTP"}
-                    </Button>
-                  ) : (
-                    <GlobalInput
-                      control={control}
-                      label="Enter OTP"
-                      name="otp"
-                      rules={{
-                        required: "OTP is required",
-                        pattern: {
-                          value: /^[0-9]{4,6}$/,
-                          message: 'Please enter a valid OTP'
-                        }
-                      }}
-                      errors={errors.otp}
-                    />
-                  )}
-                </>
-              )}
+              {/* OTP section for both login and register */}
+              <>
+                {!otpRequested ? (
+                  <Button
+                    variant="outline"
+                    className="rounded-[12px] h-[50px] w-full"
+                    size="lg"
+                    onClick={handleRequestOTP}
+                    disabled={requestingOTP}
+                  >
+                    {requestingOTP ? "Sending..." : "Request OTP"}
+                  </Button>
+                ) : (
+                  <GlobalInput
+                    control={control}
+                    label="Enter OTP"
+                    name="otp"
+                    rules={{
+                      required: "OTP is required",
+                      pattern: {
+                        value: /^[0-9]{4,6}$/,
+                        message: 'Please enter a valid OTP'
+                      }
+                    }}
+                    errors={errors.otp}
+                  />
+                )}
+              </>
               
               <div>
                 {error && <p className="text-[red] text-center">{error}</p>}
@@ -262,7 +294,7 @@ const LoginForm = ({ type }: LoginFormProps) => {
                   className="rounded-[12px] h-[50px] w-full"
                   size="lg"
                   onClick={methods.handleSubmit(onSubmit)}
-                  disabled={type === "login" && (!otpRequested || loading)}
+                  disabled={!otpRequested || loading}
                 >
                   {loading ? "Loading..." : type === "register" ? "Register" : "Login"}
                 </Button>
@@ -285,4 +317,4 @@ const LoginForm = ({ type }: LoginFormProps) => {
   )
 }
 
-export default LoginForm
+export default LoginForm;
